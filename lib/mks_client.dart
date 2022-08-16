@@ -7,7 +7,7 @@ final temperatureReadingPattern = RegExp(
     r"T:\d+ /0 B:(?<bed>\d+) /0 T0:(?<t0>\d+) /0 T1:(?<t1>\d+) /0 @:\d+ B@:\d+");
 
 abstract class MSKCommands {
-  static String ListFiles = "M20";
+  static const String listFiles = "M20";
 }
 
 abstract class MSKStates {
@@ -54,7 +54,7 @@ class MKSClient {
 
   Future<List<String>> get sdCardFiles async {
     final events = StreamQueue(_parsedStream);
-    sendCommand(MSKCommands.ListFiles);
+    sendCommand(MSKCommands.listFiles);
 
     while (true) {
       var nextLine = await events.next;
