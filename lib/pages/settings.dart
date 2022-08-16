@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mks_connect/printer_page.dart';
+import 'package:mks_connect/pages/printer/printer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage extends StatefulWidget {

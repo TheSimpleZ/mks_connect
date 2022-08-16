@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'printer_page.dart';
-import 'settings_page.dart';
+import 'pages/printer/printer.dart';
+import 'pages/settings.dart';
 
 void main() => runApp(const MyApp());
 
