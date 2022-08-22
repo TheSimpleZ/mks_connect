@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:mks_connect/mks_client.dart';
+import 'package:mks_connect/mks_printer.dart';
 import 'package:mks_connect/pages/printer/temperatures.dart';
 
 class PrinterPage extends StatefulWidget {
   final String host;
   final String port;
-  final MKSClient client;
+  final MKSPrinter printer;
 
   PrinterPage({
     super.key,
     required this.host,
     required this.port,
-  }) : client = MKSClient('ws://$host:$port');
+  }) : printer = MKSPrinter('ws://$host:$port');
 
   @override
   State<PrinterPage> createState() => _PrinterPageState();
@@ -26,12 +26,11 @@ class _PrinterPageState extends State<PrinterPage> {
   void initState() {
     widgets = [
       Temperatures(
-        bedTemp: widget.client.bedTemp,
-        extruder1Temp: widget.client.nozzleTemp,
-        extruder2Temp: widget.client.t1Temp,
+        bed: widget.printer.bed,
+        nozzle: widget.printer.nozzle,
       ),
       FutureBuilder(
-        future: widget.client.sdCardFiles,
+        future: widget.printer.sdCardFiles,
         builder: ((context, snapshot) {
           var txt = snapshot.hasData
               ? (snapshot.data as List<String>).join('\n')
@@ -54,9 +53,9 @@ class _PrinterPageState extends State<PrinterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("MKS Connect"),
-      ),
+      // appBar: AppBar(
+      //   title: const Text("MKS Connect"),
+      // ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         // child: _widgetOptions(_selectedIndex),

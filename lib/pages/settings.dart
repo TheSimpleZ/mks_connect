@@ -74,7 +74,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       MaterialPageRoute(
                         builder: (context) => PrinterPage(
                             host: _hostController.text,
-                            port: _portController.text),
+                            port: _portController.text.isEmpty
+                                ? "7000"
+                                : _portController.text),
                       ),
                     );
                   }();

@@ -4,7 +4,7 @@ import 'package:async/async.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 final temperatureReadingPattern = RegExp(
-    r"T:(?<nozzle>\d+) /(?<nozzle_target>\d+) B:(?<bed>\d+) /(?<bed_target>\d+) T0:\d+ /0 T1:\d+ /0 @:\d+ B@:\d+");
+    r"T:(?<nozzle>\d+) /(?<nozzle_target>\d+) B:(?<bed>\d+) /(?<bed_target>\d+) T0:(?<t0>\d+) /(?<t0_target>\d+) T1:(?<t1>\d+) /(?<t1_target>\d+) @:\d+ B@:\d+");
 
 abstract class MSKCommands {
   static const String listFiles = "M20";
@@ -17,7 +17,38 @@ abstract class MSKStates {
   static String pause = "PAUSE";
 }
 
-class MKSClient {
+class Heatable {
+  Stream<int> currentTemperature;
+  Stream<int> targetTemperature;
+
+  Heatable(
+    this.currentTemperature,
+    this.targetTemperature,
+  );
+}
+
+class Bed extends Heatable {
+  Bed(
+    Stream<int> currentTemperature,
+    Stream<int> targetTemperature,
+  ) : super(currentTemperature, targetTemperature);
+}
+
+class Nozzle extends Heatable {
+  Nozzle(
+    Stream<int> currentTemperature,
+    Stream<int> targetTemperature,
+  ) : super(currentTemperature, targetTemperature);
+}
+
+class Extruder extends Heatable {
+  Extruder(
+    Stream<int> currentTemperature,
+    Stream<int> targetTemperature,
+  ) : super(currentTemperature, targetTemperature);
+}
+
+class MKSPrinter {
   final WebSocketChannel _channel;
 
   late final _parsedStream = _channel.stream
@@ -32,10 +63,12 @@ class MKSClient {
           temperatureReadingPattern.firstMatch(line)!.namedGroup(groupName)!)
       .map(int.parse);
 
-  late final bedTemp = _parseTemp("bed");
-  late final nozzleTemp = _parseTemp("nozzle");
+  late final bed = Bed(_parseTemp("bed"), _parseTemp("bed_target"));
+  late final extruder1 = Extruder(_parseTemp("t0"), _parseTemp("t0_target"));
+  late final extruder2 = Extruder(_parseTemp("t1"), _parseTemp("t1_target"));
+  late final nozzle = Nozzle(_parseTemp("nozzle"), _parseTemp("nozzle_target"));
 
-  MKSClient(String uri)
+  MKSPrinter(String uri)
       : _channel = WebSocketChannel.connect(
           Uri.parse(uri),
         ) {

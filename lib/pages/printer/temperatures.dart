@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mks_connect/mks_printer.dart';
 import 'package:mks_connect/pages/printer/temp_card.dart';
 
 import '../../printer_icons_icons.dart';
@@ -6,13 +7,11 @@ import '../../printer_icons_icons.dart';
 class Temperatures extends StatelessWidget {
   const Temperatures({
     super.key,
-    required this.bedTemp,
-    required this.extruder1Temp,
-    required this.extruder2Temp,
+    required this.bed,
+    required this.nozzle,
   });
-  final Stream<int> bedTemp;
-  final Stream<int> extruder1Temp;
-  final Stream<int> extruder2Temp;
+  final Bed bed;
+  final Nozzle nozzle;
 
   @override
   Widget build(BuildContext context) {
@@ -22,15 +21,15 @@ class Temperatures extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           TemperatureCard(
-              title: "Bed", temp: bedTemp, iconData: PrinterIcons.hot_surface),
+            title: "Bed",
+            temp: bed.currentTemperature,
+            iconData: PrinterIcons.hot_surface,
+          ),
           TemperatureCard(
-              title: "Extruder 1",
-              temp: extruder1Temp,
-              iconData: PrinterIcons.hot_surface),
-          TemperatureCard(
-              title: "Extruder 2",
-              temp: extruder2Temp,
-              iconData: PrinterIcons.hot_surface),
+            title: "Nozzle",
+            temp: nozzle.currentTemperature,
+            iconData: PrinterIcons.hot_surface,
+          ),
         ],
       ),
     );
