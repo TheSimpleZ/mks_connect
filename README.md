@@ -1,16 +1,8 @@
-# mks_connect
+# MKS Connect
 
-A new Flutter project.
+This is going to be a android/ios/web app that will allow you to connect to Makerbase (MSK) based 3D printers.
+It's currently under heavy development and is not ready for use.
 
-## Getting Started
+The app is being tested with a Wanhao D12/230 printer. However, the ambition is for it to work with any MKS based printer.
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The protocol used by the MKS can be found here: https://github.com/Jeredian/mks-wifi-plugin/blob/1.4.1/MKSOutputDevice.py
