@@ -4,10 +4,11 @@ import 'package:async/async.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 final temperatureReadingPattern = RegExp(
-    r"T:\d+ /0 B:(?<bed>\d+) /0 T0:(?<t0>\d+) /0 T1:(?<t1>\d+) /0 @:\d+ B@:\d+");
+    r"T:(?<nozzle>\d+) /(?<nozzle_target>\d+) B:(?<bed>\d+) /(?<bed_target>\d+) T0:\d+ /0 T1:\d+ /0 @:\d+ B@:\d+");
 
 abstract class MSKCommands {
   static const String listFiles = "M20";
+  static const String preheatBed = "M140";
 }
 
 abstract class MSKStates {
@@ -25,31 +26,31 @@ class MKSClient {
       .transform(utf8.decoder)
       .transform(const LineSplitter());
 
-  late final _temperatureReadings =
-      _parsedStream.where((line) => temperatureReadingPattern.hasMatch(line));
-
-  Stream<int> _parseTemp(String groupName) =>
-      _temperatureReadings.map((line) => int.parse(
-          temperatureReadingPattern.firstMatch(line)!.namedGroup(groupName)!));
+  Stream<int> _parseTemp(String groupName) => _parsedStream
+      .where((line) => temperatureReadingPattern.hasMatch(line))
+      .map((line) =>
+          temperatureReadingPattern.firstMatch(line)!.namedGroup(groupName)!)
+      .map(int.parse);
 
   late final bedTemp = _parseTemp("bed");
-  late final t0Temp = _parseTemp("t0");
-  late final t1Temp = _parseTemp("t1");
+  late final nozzleTemp = _parseTemp("nozzle");
 
   MKSClient(String uri)
       : _channel = WebSocketChannel.connect(
           Uri.parse(uri),
         ) {
     _parsedStream.listen(print);
+    sendCommand(MSKCommands.preheatBed, payload: "S0");
   }
 
   void dispose() {
     _channel.sink.close();
   }
 
-  sendCommand(String command) {
-    print("Sending command: $command");
-    _channel.sink.add(utf8.encode('$command\n'));
+  sendCommand(String command, {String? payload}) {
+    final cmd = payload == null ? command : "$command $payload";
+    print("Sending command: $cmd");
+    _channel.sink.add(utf8.encode('$cmd\n'));
   }
 
   Future<List<String>> get sdCardFiles async {

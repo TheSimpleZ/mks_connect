@@ -5,10 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
     super.key,
-    required this.title,
   });
 
-  final String title;
+  final String title = "MKS Connect";
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -71,11 +70,11 @@ class _SettingsPageState extends State<SettingsPage> {
                         await SharedPreferences.getInstance();
                     prefs.setString('host', _hostController.text);
                     prefs.setString('port', _portController.text);
-                    nav.push(
+                    nav.pushReplacement(
                       MaterialPageRoute(
                         builder: (context) => PrinterPage(
-                          title: widget.title,
-                        ),
+                            host: _hostController.text,
+                            port: _portController.text),
                       ),
                     );
                   }();

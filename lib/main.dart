@@ -4,50 +4,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/printer/printer.dart';
 import 'pages/settings.dart';
 
-void main() => runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-class SharedPreferencesBuilder<T> extends StatelessWidget {
-  final String pref;
-  final AsyncWidgetBuilder<T> builder;
+  final prefs = await SharedPreferences.getInstance();
 
-  const SharedPreferencesBuilder({
-    super.key,
-    required this.pref,
-    required this.builder,
-  });
+  final host = prefs.getString('host');
 
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<T>(
-        future: _future(),
-        builder: (BuildContext context, AsyncSnapshot<T> snapshot) {
-          return builder(context, snapshot);
-        });
-  }
+  final homepage = host != null
+      ? PrinterPage(host: host, port: prefs.getString('port') ?? "7000")
+      : const SettingsPage();
 
-  Future<T> _future() async {
-    return (await SharedPreferences.getInstance()).get(pref) as T;
-  }
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    const title = 'MKS Connect';
-    return MaterialApp(
-      title: title,
-      home: SharedPreferencesBuilder<String>(
-        pref: 'host',
-        builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
-          return snapshot.hasData
-              ? const PrinterPage(title: title)
-              : const SettingsPage(
-                  title: title,
-                );
-        },
-      ),
-    );
-  }
+  runApp(MaterialApp(
+    title: 'MKS Connect',
+    theme: ThemeData(
+      primarySwatch: Colors.blue,
+    ),
+    home: homepage,
+  ));
 }
