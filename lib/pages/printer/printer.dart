@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mks_connect/mks_printer.dart';
-import 'package:mks_connect/pages/printer/temperatures.dart';
+
+import 'temps/temperatures.dart';
 
 class PrinterPage extends StatefulWidget {
   final String host;
@@ -53,9 +54,9 @@ class _PrinterPageState extends State<PrinterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: const Text("MKS Connect"),
-      // ),
+      appBar: AppBar(
+        title: const Text("MKS Connect"),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         // child: _widgetOptions(_selectedIndex),

@@ -1,7 +1,11 @@
 import 'dart:convert';
 
 import 'package:async/async.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+
+import 'printer_icons_icons.dart';
 
 final temperatureReadingPattern = RegExp(
     r"T:(?<nozzle>\d+) /(?<nozzle_target>\d+) B:(?<bed>\d+) /(?<bed_target>\d+) T0:(?<t0>\d+) /(?<t0_target>\d+) T1:(?<t1>\d+) /(?<t1_target>\d+) @:\d+ B@:\d+");
@@ -17,64 +21,74 @@ abstract class MSKStates {
   static String pause = "PAUSE";
 }
 
-class Heatable {
-  Stream<int> currentTemperature;
-  Stream<int> targetTemperature;
+abstract class HeatablePart {
+  StreamProvider<int> currentTemperature;
+  StreamProvider<int> targetTemperature;
+  String name;
+  IconData icon;
 
-  Heatable(
+  HeatablePart(
+    this.name,
+    this.icon,
+    this.currentTemperature,
+    this.targetTemperature,
+  );
+
+  void preHeat(int temp);
+}
+
+class Bed extends HeatablePart {
+  Bed(
+    StreamProvider<int> currentTemperature,
+    StreamProvider<int> targetTemperature,
+  ) : super("Bed", PrinterIcons.hot_surface, currentTemperature,
+            targetTemperature);
+
+  @override
+  void preHeat(int temp) {
+    // TODO: implement preHeat
+  }
+}
+
+class Nozzle extends HeatablePart {
+  Nozzle(
+    StreamProvider<int> currentTemperature,
+    StreamProvider<int> targetTemperature,
+  ) : super("Nozzle", Icons.pin_drop_outlined, currentTemperature,
+            targetTemperature);
+
+  @override
+  void preHeat(int temp) {
+    // TODO: implement preHeat
+  }
+}
+
+class Extruder {
+  StreamProvider<int> currentTemperature;
+  StreamProvider<int> targetTemperature;
+  String name;
+  IconData icon = Icons.colorize;
+
+  Extruder(
+    this.name,
     this.currentTemperature,
     this.targetTemperature,
   );
 }
 
-class Bed extends Heatable {
-  Bed(
-    Stream<int> currentTemperature,
-    Stream<int> targetTemperature,
-  ) : super(currentTemperature, targetTemperature);
-}
-
-class Nozzle extends Heatable {
-  Nozzle(
-    Stream<int> currentTemperature,
-    Stream<int> targetTemperature,
-  ) : super(currentTemperature, targetTemperature);
-}
-
-class Extruder extends Heatable {
-  Extruder(
-    Stream<int> currentTemperature,
-    Stream<int> targetTemperature,
-  ) : super(currentTemperature, targetTemperature);
-}
-
-class MKSPrinter {
+class MKSClient {
   final WebSocketChannel _channel;
 
-  late final _parsedStream = _channel.stream
+  late final stream = _channel.stream
       .asBroadcastStream()
       .cast<List<int>>()
       .transform(utf8.decoder)
       .transform(const LineSplitter());
 
-  Stream<int> _parseTemp(String groupName) => _parsedStream
-      .where((line) => temperatureReadingPattern.hasMatch(line))
-      .map((line) =>
-          temperatureReadingPattern.firstMatch(line)!.namedGroup(groupName)!)
-      .map(int.parse);
-
-  late final bed = Bed(_parseTemp("bed"), _parseTemp("bed_target"));
-  late final extruder1 = Extruder(_parseTemp("t0"), _parseTemp("t0_target"));
-  late final extruder2 = Extruder(_parseTemp("t1"), _parseTemp("t1_target"));
-  late final nozzle = Nozzle(_parseTemp("nozzle"), _parseTemp("nozzle_target"));
-
-  MKSPrinter(String uri)
+  MKSClient(String uri)
       : _channel = WebSocketChannel.connect(
           Uri.parse(uri),
-        ) {
-    _parsedStream.listen(print);
-    sendCommand(MSKCommands.preheatBed, payload: "S0");
-  }
+        );
 
   void dispose() {
     _channel.sink.close();
@@ -82,13 +96,38 @@ class MKSPrinter {
 
   sendCommand(String command, {String? payload}) {
     final cmd = payload == null ? command : "$command $payload";
-    print("Sending command: $cmd");
+    debugPrint("Sending command: $cmd");
     _channel.sink.add(utf8.encode('$cmd\n'));
+  }
+}
+
+class MKSPrinter {
+  final MKSClient _client;
+
+  StreamProvider<int> _parseTemp(String groupName) =>
+      StreamProvider<int>((ref) => _client.stream
+          .where((line) => temperatureReadingPattern.hasMatch(line))
+          .map((line) => temperatureReadingPattern
+              .firstMatch(line)!
+              .namedGroup(groupName)!)
+          .map(int.parse));
+
+  late final bed = Bed(_parseTemp("bed"), _parseTemp("bed_target"));
+  late final extruder1 =
+      Extruder("Extruder 1", _parseTemp("t0"), _parseTemp("t0_target"));
+  late final extruder2 =
+      Extruder("Extruder 2", _parseTemp("t1"), _parseTemp("t1_target"));
+  late final nozzle = Nozzle(_parseTemp("nozzle"), _parseTemp("nozzle_target"));
+
+  MKSPrinter(String uri) : _client = MKSClient(uri);
+
+  void dispose() {
+    _client.dispose();
   }
 
   Future<List<String>> get sdCardFiles async {
-    final events = StreamQueue(_parsedStream);
-    sendCommand(MSKCommands.listFiles);
+    final events = StreamQueue(_client.stream);
+    _client.sendCommand(MSKCommands.listFiles);
 
     while (true) {
       var nextLine = await events.next;

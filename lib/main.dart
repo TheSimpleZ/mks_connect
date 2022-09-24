@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'pages/printer/printer.dart';
@@ -15,11 +16,13 @@ void main() async {
       ? PrinterPage(host: host, port: prefs.getString('port') ?? "7000")
       : const SettingsPage();
 
-  runApp(MaterialApp(
-    title: 'MKS Connect',
-    theme: ThemeData(
-      primarySwatch: Colors.blue,
+  runApp(ProviderScope(
+    child: MaterialApp(
+      title: 'MKS Connect',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: homepage,
     ),
-    home: homepage,
   ));
 }
