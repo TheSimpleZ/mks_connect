@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'printer_icons_icons.dart';
@@ -13,17 +15,13 @@ final temperatureReadingPattern = RegExp(
 abstract class MSKCommands {
   static const String listFiles = "M20";
   static const String preheatBed = "M140";
-}
-
-abstract class MSKStates {
-  static String idle = "IDLE";
-  static String printing = "PRINTING";
-  static String pause = "PAUSE";
+  static const String getStatus = "M997";
+  static const String getProgress = "M27";
 }
 
 abstract class HeatablePart {
-  StreamProvider<int> currentTemperature;
-  StreamProvider<int> targetTemperature;
+  AutoDisposeStreamProvider<int> currentTemperature;
+  AutoDisposeStreamProvider<int> targetTemperature;
   String name;
   IconData icon;
 
@@ -39,8 +37,8 @@ abstract class HeatablePart {
 
 class Bed extends HeatablePart {
   Bed(
-    StreamProvider<int> currentTemperature,
-    StreamProvider<int> targetTemperature,
+    AutoDisposeStreamProvider<int> currentTemperature,
+    AutoDisposeStreamProvider<int> targetTemperature,
   ) : super("Bed", PrinterIcons.hot_surface, currentTemperature,
             targetTemperature);
 
@@ -52,8 +50,8 @@ class Bed extends HeatablePart {
 
 class Nozzle extends HeatablePart {
   Nozzle(
-    StreamProvider<int> currentTemperature,
-    StreamProvider<int> targetTemperature,
+    AutoDisposeStreamProvider<int> currentTemperature,
+    AutoDisposeStreamProvider<int> targetTemperature,
   ) : super("Nozzle", Icons.pin_drop_outlined, currentTemperature,
             targetTemperature);
 
@@ -64,8 +62,8 @@ class Nozzle extends HeatablePart {
 }
 
 class Extruder {
-  StreamProvider<int> currentTemperature;
-  StreamProvider<int> targetTemperature;
+  AutoDisposeStreamProvider<int> currentTemperature;
+  AutoDisposeStreamProvider<int> targetTemperature;
   String name;
   IconData icon = Icons.colorize;
 
@@ -75,6 +73,8 @@ class Extruder {
     this.targetTemperature,
   );
 }
+
+enum PrinterStatus { idle, printing, paused }
 
 class MKSClient {
   final WebSocketChannel _channel;
@@ -88,7 +88,9 @@ class MKSClient {
   MKSClient(String uri)
       : _channel = WebSocketChannel.connect(
           Uri.parse(uri),
-        );
+        ) {
+    stream.listen(print);
+  }
 
   void dispose() {
     _channel.sink.close();
@@ -104,8 +106,8 @@ class MKSClient {
 class MKSPrinter {
   final MKSClient _client;
 
-  StreamProvider<int> _parseTemp(String groupName) =>
-      StreamProvider<int>((ref) => _client.stream
+  AutoDisposeStreamProvider<int> _parseTemp(String groupName) =>
+      StreamProvider.autoDispose<int>((ref) => _client.stream
           .where((line) => temperatureReadingPattern.hasMatch(line))
           .map((line) => temperatureReadingPattern
               .firstMatch(line)!
@@ -118,8 +120,25 @@ class MKSPrinter {
   late final extruder2 =
       Extruder("Extruder 2", _parseTemp("t1"), _parseTemp("t1_target"));
   late final nozzle = Nozzle(_parseTemp("nozzle"), _parseTemp("nozzle_target"));
+  late final status = StreamProvider.autoDispose<PrinterStatus>((ref) => _client
+      .stream
+      .where((line) => line.startsWith(MSKCommands.getStatus))
+      .map((line) => line.split(" ")[1].toLowerCase())
+      .map(PrinterStatus.values.byName));
 
-  MKSPrinter(String uri) : _client = MKSClient(uri);
+  late final progress = StreamProvider.autoDispose<int>((ref) => _client.stream
+      .where((line) => line.startsWith(MSKCommands.getProgress))
+      .map((line) => line.split(" ")[1])
+      .map(int.parse));
+
+  MKSPrinter(String uri) : _client = MKSClient(uri) {
+    Timer.periodic(const Duration(seconds: 10), _pollForValues);
+  }
+
+  void _pollForValues(Timer t) {
+    _client.sendCommand(MSKCommands.getStatus);
+    _client.sendCommand(MSKCommands.getProgress);
+  }
 
   void dispose() {
     _client.dispose();

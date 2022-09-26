@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mks_connect/mks_printer.dart';
 
+import 'printer_progress_status.dart';
 import 'temps/temperatures.dart';
 
 class PrinterPage extends StatefulWidget {
@@ -21,14 +22,27 @@ class PrinterPage extends StatefulWidget {
 class _PrinterPageState extends State<PrinterPage> {
   int _selectedIndex = 0;
 
-  List<Widget> widgets = [];
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
-  void initState() {
-    widgets = [
-      Temperatures(
-        bed: widget.printer.bed,
-        nozzle: widget.printer.nozzle,
+  Widget build(BuildContext context) {
+    List<Widget> widgets = [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PrinterProgressStatus(
+              status: widget.printer.status, progress: widget.printer.progress),
+          const SizedBox(width: 50),
+          Temperatures(
+            bed: widget.printer.bed,
+            nozzle: widget.printer.nozzle,
+          ),
+        ],
       ),
       FutureBuilder(
         future: widget.printer.sdCardFiles,
@@ -42,17 +56,6 @@ class _PrinterPageState extends State<PrinterPage> {
       )
     ];
 
-    super.initState();
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("MKS Connect"),

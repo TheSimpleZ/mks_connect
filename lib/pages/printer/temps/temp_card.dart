@@ -21,36 +21,41 @@ class TemperatureCard extends ConsumerWidget {
     final current = ref.watch(part.currentTemperature);
     final target = ref.watch(part.targetTemperature);
 
-
     return GestureDetector(
       onTap: _onItemTapped,
       child: Card(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Icon(part.icon, size: 50),
-              const SizedBox(height: 20.0),
+              Icon(part.icon, size: 40),
+              const SizedBox(width: 20.0),
               Text(part.name),
-              const SizedBox(height: 20.0),
+              const SizedBox(width: 20.0),
               Row(
                 children: [
                   current.when(
                     data: (temp) => Text(temp.toString()),
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
-                    error: (e, st) => Center(child: Text(e.toString())),
+                    error: (e, st) {
+                      debugPrint(e.toString());
+                      return const Center(child: Text("N/A"));
+                    },
                   ),
                   const Text("/"),
                   target.when(
                     data: (temp) => Text(temp.toString()),
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
-                    error: (e, st) => Center(child: Text(e.toString())),
+                    error: (e, st) {
+                      debugPrint(e.toString());
+                      return const Center(child: Text("N/A"));
+                    },
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),

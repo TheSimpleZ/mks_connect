@@ -14,11 +14,14 @@ class Temperatures extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        TemperatureCard(bed),
-        TemperatureCard(nozzle),
-      ],
+    return IntrinsicWidth(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TemperatureCard(bed),
+          TemperatureCard(nozzle),
+        ],
+      ),
     );
   }
 }
