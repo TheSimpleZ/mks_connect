@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'mks_printer.dart';
 import 'pages/printer/printer.dart';
-import 'pages/printer/sdcard.dart';
+import 'pages/sdcard.dart';
 
 class MainDrawer extends HookConsumerWidget {
   const MainDrawer({
@@ -15,14 +16,23 @@ class MainDrawer extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final currentPage = useState<Widget?>(null);
+
     navigateTo(Widget page) {
-      return () => Navigator.of(context)
-        ..pop()
-        ..push(
+      if (currentPage.value.runtimeType == page.runtimeType) {
+        return null;
+      }
+
+      debugPrint(currentPage.value.runtimeType.toString());
+
+      return () {
+        currentPage.value = page;
+        return Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => page,
           ),
         );
+      };
     }
 
     return Drawer(
@@ -46,7 +56,10 @@ class MainDrawer extends HookConsumerWidget {
             title: const Text('SD Card'),
             onTap: () {
               ref.refresh(printer.sdCardFiles.future);
-              navigateTo(SdCardPage(printer: printer))();
+              final nav = navigateTo(SdCardPage(printer: printer));
+              if (nav != null) {
+                nav();
+              }
             },
           ),
         ],

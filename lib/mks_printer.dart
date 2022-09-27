@@ -138,6 +138,7 @@ class MKSPrinter {
       (ref) => _parseCommandResponse(MSKCommands.getStatus).map(int.parse));
 
   MKSPrinter(String uri) : _client = MKSClient(uri) {
+    _pollForValues();
     Timer.periodic(const Duration(seconds: 10), _pollForValues);
   }
 

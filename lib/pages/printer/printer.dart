@@ -5,28 +5,6 @@ import '../../mainDrawer.dart';
 import 'printer_progress_status.dart';
 import 'temps/temperatures.dart';
 
-class MainPage extends StatefulWidget {
-  final String host;
-  final String port;
-  final MKSPrinter printer;
-
-  MainPage({
-    super.key,
-    required this.host,
-    required this.port,
-  }) : printer = MKSPrinter('ws://$host:$port');
-
-  @override
-  State<MainPage> createState() => _MainPageState();
-}
-
-class _MainPageState extends State<MainPage> {
-  @override
-  Widget build(BuildContext context) {
-    return PrinterPage(printer: widget.printer);
-  }
-}
-
 class PrinterPage extends StatelessWidget {
   const PrinterPage({
     Key? key,
