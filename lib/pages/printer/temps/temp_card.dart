@@ -37,8 +37,9 @@ class TemperatureCard extends ConsumerWidget {
                 children: [
                   current.when(
                     data: (temp) => Text(temp.toString()),
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
+                    loading: () => const SizedBox(
+                        width: 20,
+                        child: Center(child: LinearProgressIndicator())),
                     error: (e, st) {
                       debugPrint(e.toString());
                       return const Center(child: Text("N/A"));
@@ -47,8 +48,9 @@ class TemperatureCard extends ConsumerWidget {
                   const Text("/"),
                   target.when(
                     data: (temp) => Text(temp.toString()),
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
+                    loading: () => const SizedBox(
+                        width: 20,
+                        child: Center(child: LinearProgressIndicator())),
                     error: (e, st) {
                       debugPrint(e.toString());
                       return const Center(child: Text("N/A"));

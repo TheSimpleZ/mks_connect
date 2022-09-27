@@ -13,7 +13,7 @@ void main() async {
   final host = prefs.getString('host');
 
   final homepage = host != null
-      ? PrinterPage(host: host, port: prefs.getString('port') ?? "7000")
+      ? MainPage(host: host, port: prefs.getString('port') ?? "7000")
       : const SettingsPage();
 
   runApp(ProviderScope(

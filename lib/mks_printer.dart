@@ -14,9 +14,11 @@ final temperatureReadingPattern = RegExp(
 
 abstract class MSKCommands {
   static const String listFiles = "M20";
+  static const String pausePrint = "M25";
+  static const String stopPrint = "M26";
+  static const String getProgress = "M27";
   static const String preheatBed = "M140";
   static const String getStatus = "M997";
-  static const String getProgress = "M27";
 }
 
 abstract class HeatablePart {
@@ -89,7 +91,7 @@ class MKSClient {
       : _channel = WebSocketChannel.connect(
           Uri.parse(uri),
         ) {
-    stream.listen(print);
+    stream.listen(debugPrint);
   }
 
   void dispose() {
@@ -114,22 +116,22 @@ class MKSPrinter {
               .namedGroup(groupName)!)
           .map(int.parse));
 
+  Stream<String> _parseCommandResponse(String cmd) => _client.stream
+      .where((line) => line.startsWith(cmd))
+      .map((line) => line.split(" ")[1].toLowerCase());
+
   late final bed = Bed(_parseTemp("bed"), _parseTemp("bed_target"));
   late final extruder1 =
       Extruder("Extruder 1", _parseTemp("t0"), _parseTemp("t0_target"));
   late final extruder2 =
       Extruder("Extruder 2", _parseTemp("t1"), _parseTemp("t1_target"));
   late final nozzle = Nozzle(_parseTemp("nozzle"), _parseTemp("nozzle_target"));
-  late final status = StreamProvider.autoDispose<PrinterStatus>((ref) => _client
-      .stream
-      .where((line) => line.startsWith(MSKCommands.getStatus))
-      .map((line) => line.split(" ")[1].toLowerCase())
-      .map(PrinterStatus.values.byName));
+  late final status = StreamProvider.autoDispose<PrinterStatus>((ref) =>
+      _parseCommandResponse(MSKCommands.getStatus)
+          .map(PrinterStatus.values.byName));
 
-  late final progress = StreamProvider.autoDispose<int>((ref) => _client.stream
-      .where((line) => line.startsWith(MSKCommands.getProgress))
-      .map((line) => line.split(" ")[1])
-      .map(int.parse));
+  late final progress = StreamProvider.autoDispose<int>(
+      (ref) => _parseCommandResponse(MSKCommands.getStatus).map(int.parse));
 
   MKSPrinter(String uri) : _client = MKSClient(uri) {
     Timer.periodic(const Duration(seconds: 10), _pollForValues);
@@ -144,7 +146,15 @@ class MKSPrinter {
     _client.dispose();
   }
 
-  Future<List<String>> get sdCardFiles async {
+  void stop() {
+    _client.sendCommand(MSKCommands.stopPrint);
+  }
+
+  void pause() {
+    _client.sendCommand(MSKCommands.pausePrint);
+  }
+
+  late final sdCardFiles = FutureProvider.autoDispose((ref) async {
     final events = StreamQueue(_client.stream);
     _client.sendCommand(MSKCommands.listFiles);
 
@@ -166,5 +176,5 @@ class MKSPrinter {
     }
     events.cancel();
     return files;
-  }
+  });
 }

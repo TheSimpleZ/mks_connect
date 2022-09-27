@@ -72,7 +72,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     prefs.setString('port', _portController.text);
                     nav.pushReplacement(
                       MaterialPageRoute(
-                        builder: (context) => PrinterPage(
+                        builder: (context) => MainPage(
                             host: _hostController.text,
                             port: _portController.text.isEmpty
                                 ? "7000"
