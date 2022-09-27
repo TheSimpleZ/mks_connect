@@ -14,6 +14,8 @@ final temperatureReadingPattern = RegExp(
 
 abstract class MSKCommands {
   static const String listFiles = "M20";
+  static const String selectFile = "M23";
+  static const String startPrint = "M24";
   static const String pausePrint = "M25";
   static const String stopPrint = "M26";
   static const String getProgress = "M27";
@@ -98,7 +100,7 @@ class MKSClient {
     _channel.sink.close();
   }
 
-  sendCommand(String command, {String? payload}) {
+  void sendCommand(String command, {String? payload}) {
     final cmd = payload == null ? command : "$command $payload";
     debugPrint("Sending command: $cmd");
     _channel.sink.add(utf8.encode('$cmd\n'));
@@ -126,9 +128,11 @@ class MKSPrinter {
   late final extruder2 =
       Extruder("Extruder 2", _parseTemp("t1"), _parseTemp("t1_target"));
   late final nozzle = Nozzle(_parseTemp("nozzle"), _parseTemp("nozzle_target"));
-  late final status = StreamProvider.autoDispose<PrinterStatus>((ref) =>
-      _parseCommandResponse(MSKCommands.getStatus)
-          .map(PrinterStatus.values.byName));
+
+  late final statusStream = _parseCommandResponse(MSKCommands.getStatus)
+      .map(PrinterStatus.values.byName);
+  late final status =
+      StreamProvider.autoDispose<PrinterStatus>((ref) => statusStream);
 
   late final progress = StreamProvider.autoDispose<int>(
       (ref) => _parseCommandResponse(MSKCommands.getStatus).map(int.parse));
@@ -137,9 +141,17 @@ class MKSPrinter {
     Timer.periodic(const Duration(seconds: 10), _pollForValues);
   }
 
-  void _pollForValues(Timer t) {
+  void _sendCommand(String cmd) {
+    _pollForValues();
+    _client.sendCommand(cmd);
+  }
+
+  void _pollForValues([Timer? t]) async {
     _client.sendCommand(MSKCommands.getStatus);
-    _client.sendCommand(MSKCommands.getProgress);
+    final currentStatus = await statusStream.last;
+    if (currentStatus != PrinterStatus.idle) {
+      _client.sendCommand(MSKCommands.getProgress);
+    }
   }
 
   void dispose() {
@@ -147,21 +159,26 @@ class MKSPrinter {
   }
 
   void stop() {
-    _client.sendCommand(MSKCommands.stopPrint);
+    _sendCommand(MSKCommands.stopPrint);
   }
 
   void pause() {
-    _client.sendCommand(MSKCommands.pausePrint);
+    _sendCommand(MSKCommands.pausePrint);
+  }
+
+  void print(String file) {
+    _sendCommand("${MSKCommands.selectFile} $file");
+    _sendCommand(MSKCommands.startPrint);
   }
 
   late final sdCardFiles = FutureProvider.autoDispose((ref) async {
     final events = StreamQueue(_client.stream);
-    _client.sendCommand(MSKCommands.listFiles);
+    _sendCommand(MSKCommands.listFiles);
 
     while (true) {
       var nextLine = await events.next;
       if (nextLine.startsWith('Begin file list')) {
-        await events.next; // Discard system volume info
+        await events.next;
         break;
       }
     }

@@ -16,17 +16,20 @@ class SdCardPage extends HookConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("MKS Connect"),
+        title: const Text("SD Card"),
       ),
       body: files.when(
           data: (data) => ListView.builder(
+                shrinkWrap: true,
                 itemCount: data.length,
                 itemBuilder: (context, index) => Card(
                   color: selectedFile.value == index
                       ? Theme.of(context).colorScheme.secondaryContainer
                       : null,
                   child: ListTile(
-                    onTap: () => selectedFile.value = index,
+                    onTap: () => selectedFile.value == index
+                        ? selectedFile.value = null
+                        : selectedFile.value = index,
                     title: Text(
                       data[index],
                       style: TextStyle(
@@ -42,6 +45,11 @@ class SdCardPage extends HookConsumerWidget {
               const Text("Error occured while getting files from printer"),
           loading: () => const CircularProgressIndicator()),
       drawer: MainDrawer(printer: printer),
+      floatingActionButton: selectedFile.value == null
+          ? null
+          : FloatingActionButton(
+              onPressed: () => printer.print(files.value![selectedFile.value!]),
+              child: const Icon(Icons.print)),
     );
   }
 }

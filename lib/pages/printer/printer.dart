@@ -39,7 +39,7 @@ class PrinterPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("MKS Connect"),
+        title: const Text("Printer"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -68,7 +68,7 @@ class PrinterPage extends StatelessWidget {
                 ),
                 const SizedBox(width: 20),
                 ElevatedButton(
-                  onPressed: () => printer.pause(),
+                  onPressed: () => printer.stop(),
                   child: const Text('Stop'),
                 ),
               ],
