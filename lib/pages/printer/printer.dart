@@ -54,7 +54,7 @@ class PrinterPage extends StatelessWidget {
           ],
         ),
       ),
-      drawer: MainDrawer(printer: printer),
+      drawer: MainDrawer(printer: printer, currentPage: this),
     );
   }
 }

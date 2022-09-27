@@ -44,7 +44,10 @@ class SdCardPage extends HookConsumerWidget {
           error: (error, stackTrace) =>
               const Text("Error occured while getting files from printer"),
           loading: () => const CircularProgressIndicator()),
-      drawer: MainDrawer(printer: printer),
+      drawer: MainDrawer(
+        printer: printer,
+        currentPage: this,
+      ),
       floatingActionButton: selectedFile.value == null
           ? null
           : FloatingActionButton(

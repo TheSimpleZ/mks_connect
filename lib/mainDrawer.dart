@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'mks_printer.dart';
@@ -10,23 +9,20 @@ class MainDrawer extends HookConsumerWidget {
   const MainDrawer({
     Key? key,
     required this.printer,
+    required this.currentPage,
   }) : super(key: key);
 
   final MKSPrinter printer;
+  final Widget currentPage;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentPage = useState<Widget?>(null);
-
-    navigateTo(Widget page) {
-      if (currentPage.value.runtimeType == page.runtimeType) {
+    navigateTo(Widget page, int id) {
+      if (currentPage.runtimeType == page.runtimeType) {
         return null;
       }
 
-      debugPrint(currentPage.value.runtimeType.toString());
-
       return () {
-        currentPage.value = page;
         return Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => page,
@@ -49,16 +45,18 @@ class MainDrawer extends HookConsumerWidget {
           ListTile(
             leading: const Icon(Icons.print),
             title: const Text('Printer'),
-            onTap: navigateTo(PrinterPage(printer: printer)),
+            onTap: navigateTo(PrinterPage(printer: printer), 0),
           ),
           ListTile(
             leading: const Icon(Icons.sd_card),
             title: const Text('SD Card'),
             onTap: () {
               ref.refresh(printer.sdCardFiles.future);
-              final nav = navigateTo(SdCardPage(printer: printer));
+              final nav = navigateTo(SdCardPage(printer: printer), 1);
               if (nav != null) {
                 nav();
+              } else {
+                Navigator.of(context).pop();
               }
             },
           ),
